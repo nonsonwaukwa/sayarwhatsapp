@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { saveEmailToWaitlist } from './services/airtable';
 import { 
   MessageCircle, 
   ShoppingCart, 
@@ -16,12 +17,25 @@ function App() {
   const [email, setEmail] = useState('');
   const [footerEmail, setFooterEmail] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleWaitlistSubmit = (e: React.FormEvent, emailValue: string, setEmailValue: React.Dispatch<React.SetStateAction<string>>) => {
+  const handleWaitlistSubmit = async (e: React.FormEvent, emailValue: string, setEmailValue: React.Dispatch<React.SetStateAction<string>>) => {
     e.preventDefault();
-    if (emailValue.trim()) {
+    if (!emailValue.trim()) return;
+    
+    setIsSubmitting(true);
+    setSubmitError(null);
+    
+    try {
+      await saveEmailToWaitlist(emailValue.trim());
       alert('Thank you! You\'ve been added to the waitlist. We\'ll notify you when Sayar is ready.');
       setEmailValue('');
+    } catch (error) {
+      console.error('Error submitting to waitlist:', error);
+      setSubmitError('There was an error adding you to the waitlist. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -49,11 +63,22 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="mb-12">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-center">
+            <img 
+              src="/Sayar (3).png" 
+              alt="Sayar Logo" 
+              className="h-20 w-auto"
+            />
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-50 to-white py-20 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2325D366%22%20fill-opacity%3D%220.03%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
-        
+      <section className="relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
@@ -78,10 +103,14 @@ function App() {
                   />
                   <button
                     type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    disabled={isSubmitting}
+                    className={`bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
                   >
-                    Join Waitlist
+                    {isSubmitting ? 'Joining...' : 'Join Waitlist'}
                   </button>
+                  {submitError && (
+                    <p className="text-red-600 text-sm mt-2">{submitError}</p>
+                  )}
                 </div>
               </form>
               
@@ -92,43 +121,11 @@ function App() {
             
             <div className="flex justify-center lg:justify-end">
               <div className="relative">
-                <div className="bg-gray-900 rounded-[2.5rem] p-2 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                  <div className="bg-gray-800 rounded-[2rem] p-4">
-                    <div className="bg-white rounded-[1.5rem] w-80 h-96 p-4 overflow-hidden">
-                      {/* WhatsApp Interface Mockup */}
-                      <div className="bg-green-600 text-white p-3 rounded-t-lg flex items-center gap-3">
-                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                          <ShoppingCart className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-sm">Your Store</div>
-                          <div className="text-xs opacity-90">Online</div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-3 space-y-3 bg-gray-50 h-80">
-                        <div className="bg-white p-3 rounded-lg shadow-sm">
-                          <div className="text-sm font-medium mb-2">Browse Our Catalog</div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-gray-100 rounded h-16 flex items-center justify-center text-xs">Product 1</div>
-                            <div className="bg-gray-100 rounded h-16 flex items-center justify-center text-xs">Product 2</div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-green-100 p-3 rounded-lg ml-8">
-                          <div className="text-sm">I want to order the blue shirt</div>
-                        </div>
-                        
-                        <div className="bg-white p-3 rounded-lg mr-8">
-                          <div className="text-sm mb-2">Perfect! Here's your instant checkout:</div>
-                          <div className="bg-green-600 text-white text-center py-2 rounded text-xs font-medium">
-                            Pay ₦15,000 - Complete Order
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <img 
+                  src="/flow.png" 
+                  alt="WhatsApp business interface showing product catalog and ordering flow" 
+                  className="rounded-2xl shadow-2xl w-full max-w-lg transform hover:scale-105 transition-transform duration-300"
+                />
               </div>
             </div>
           </div>
@@ -183,132 +180,82 @@ function App() {
       </section>
 
       {/* Benefits */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gradient-to-b from-white to-green-50">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-8">
-                More Sales, Less Stress
-              </h2>
-              
-              <div className="space-y-6">
-                {[
-                  {
-                    title: "Always-up-to-date catalog",
-                    description: "Your products automatically appear in every WhatsApp chat. No manual sending of pictures or price lists."
-                  },
-                  {
-                    title: "Instant checkout links",
-                    description: "No more 'let me check stock' or 'send your account details.' Customers pay immediately."
-                  },
-                  {
-                    title: "Automatic confirmations",
-                    description: "Order details, payment confirmation, and tracking info sent automatically. You focus on fulfilling orders."
-                  },
-                  {
-                    title: "Never miss a sale again",
-                    description: "Even when you're busy or sleeping, customers can browse, order, and pay. Wake up to new sales."
-                  }
-                ].map((benefit, index) => (
-                  <div key={index} className="flex gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                    <div className="bg-green-100 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-900 mb-2">{benefit.title}</h3>
-                      <p className="text-gray-600">{benefit.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-2xl p-8">
-                <div className="text-6xl mb-6">📈</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Triple Your WhatsApp Sales</h3>
-                <p className="text-gray-600 mb-6">
-                  Business owners using automated checkout systems see 3x more completed orders from their social media traffic.
-                </p>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="bg-white p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-red-500 mb-1">40%</div>
-                    <div className="text-sm text-gray-600">Orders lost to slow replies</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600 mb-1">95%</div>
-                    <div className="text-sm text-gray-600">Instant checkout completion</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+          <h2 className="text-4xl lg:text-6xl font-bold text-center mb-4">
+            More Sales, <span className="text-green-600">Less Stress</span>
+          </h2>
+          <p className="text-xl text-gray-600 text-center mb-16 max-w-3xl mx-auto">
+            Automate your WhatsApp business and watch your sales grow while you focus on what matters
+          </p>
 
-      {/* Social Proof */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Trusted by Nigerian Business Owners
-            </h2>
-            <div className="flex items-center justify-center gap-2 mb-8">
-              <div className="flex text-yellow-400">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-current" />
-                ))}
-              </div>
-              <span className="text-gray-600 ml-2">Loved by early users</span>
-            </div>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-8">
             {[
               {
-                name: "Adaora C.",
-                business: "Fashion Store Owner",
-                quote: "I was losing so many customers because I couldn't reply fast enough. Can't wait to try Sayar!",
-                avatar: "👗"
+                icon: "🎯",
+                title: "Always-up-to-date catalog",
+                description: "Your products automatically appear in every WhatsApp chat. No manual sending of pictures or price lists.",
+                highlight: "Automatic Updates"
               },
               {
-                name: "Ibrahim M.",
-                business: "Electronics Seller",
-                quote: "My customers always ask 'is this available?' at 2am. This will solve everything.",
-                avatar: "📱"
+                icon: "⚡️",
+                title: "Instant checkout links",
+                description: "No more 'let me check stock' or 'send your account details.' Customers pay immediately.",
+                highlight: "Quick Payments"
               },
               {
-                name: "Blessing O.",
-                business: "Food Business",
-                quote: "Manual order taking is exhausting. An automated system like this is exactly what I need.",
-                avatar: "🍲"
+                icon: "✨",
+                title: "Automatic confirmations",
+                description: "Order details, payment confirmation, and tracking info sent automatically. You focus on fulfilling orders.",
+                highlight: "Zero Manual Work"
+              },
+              {
+                icon: "💫",
+                title: "Never miss a sale again",
+                description: "Even when you're busy or sleeping, customers can browse, order, and pay. Wake up to new sales.",
+                highlight: "24/7 Sales"
               }
-            ].map((testimonial, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-sm text-gray-600">{testimonial.business}</div>
-                  </div>
-                </div>
-                <p className="text-gray-700 italic">"{testimonial.quote}"</p>
+            ].map((benefit, index) => (
+              <div key={index} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="text-4xl mb-4">{benefit.icon}</div>
+                <div className="text-sm font-medium text-green-600 mb-3">{benefit.highlight}</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{benefit.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{benefit.description}</p>
               </div>
             ))}
           </div>
-          
-          <div className="text-center mt-12">
-            <div className="inline-flex items-center gap-2 bg-white px-6 py-3 rounded-lg shadow-sm">
-              <Users className="w-5 h-5 text-green-600" />
-              <span className="font-semibold text-gray-900">500+ businesses</span>
-              <span className="text-gray-600">already on the waitlist</span>
+
+          <div className="mt-20 bg-white rounded-3xl p-10 shadow-xl max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                  Triple Your WhatsApp Sales
+                </h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  Business owners using automated checkout systems see 3x more completed orders from their social media traffic.
+                </p>
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">Proven Results</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-red-50 p-6 rounded-xl text-center">
+                  <div className="text-3xl font-bold text-red-500 mb-2">40%</div>
+                  <div className="text-sm text-gray-600">Orders lost to slow replies</div>
+                </div>
+                <div className="bg-green-50 p-6 rounded-xl text-center">
+                  <div className="text-3xl font-bold text-green-600 mb-2">95%</div>
+                  <div className="text-sm text-gray-600">Instant checkout completion</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
+     
       {/* Waitlist CTA */}
       <section className="py-20 bg-green-600">
         <div className="container mx-auto px-4 text-center">
@@ -331,11 +278,15 @@ function App() {
               />
               <button
                 type="submit"
-                className="bg-white text-green-600 font-semibold px-8 py-4 rounded-lg text-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className={`bg-white text-green-600 font-semibold px-8 py-4 rounded-lg text-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
-                Join Waitlist - It's Free
+                {isSubmitting ? 'Joining...' : 'Join Waitlist - It\'s Free'}
                 <ArrowRight className="w-5 h-5" />
               </button>
+              {submitError && (
+                <p className="text-red-100 text-sm mt-2">{submitError}</p>
+              )}
             </div>
           </form>
           
@@ -394,7 +345,13 @@ function App() {
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">Sayar</h3>
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/Sayar (1).png" 
+                alt="Sayar Logo" 
+                className="h-16 w-auto"
+              />
+            </div>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
               Turning WhatsApp chats into sales for Nigerian businesses, one order at a time.
             </p>
