@@ -83,7 +83,7 @@ function App() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                Turn WhatsApp chats into sales 
+                Turn WhatsApps chats into sales 
                 <span className="text-green-600"> automatically</span>
               </h1>
               
