@@ -69,7 +69,7 @@ function App() {
         <div className="container mx-auto px-4">
           <div className="flex justify-center">
             <img 
-              src="/Sayar (3).png" 
+              src="/images/sayar-3.png" 
               alt="Sayar Logo" 
               className="h-20 w-auto"
             />
@@ -122,7 +122,7 @@ function App() {
             <div className="flex justify-center lg:justify-end">
               <div className="relative">
                 <img 
-                  src="/flow.png" 
+                  src="/images/flow.png" 
                   alt="WhatsApp business interface showing product catalog and ordering flow" 
                   className="rounded-2xl shadow-2xl w-full max-w-lg transform hover:scale-105 transition-transform duration-300"
                 />
